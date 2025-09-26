@@ -1,56 +1,63 @@
 <?php
 $token = "8275617276:AAEawpLNQ4WKYdeB86Qacr70m18z_z1UaG4";
-$website = "https://api.telegram.org/bot".$token;
+$apiURL = "https://api.telegram.org/bot$token/";
 
-$input = file_get_contents("php://input");
-$update = json_decode($input, TRUE);
-
-$chatId = $update['message']['chat']['id'] ?? null;
-$message = $update['message']['text'] ?? "";
-
-/* === Función para enviar mensajes === */
+// === Función para enviar mensajes ===
 function sendMessage($chatId, $text, $replyMarkup = null) {
-    global $website;
-    $url = $website."/sendMessage";
-    $post = [
+    global $apiURL;
+
+    $data = [
         'chat_id' => $chatId,
         'text' => $text,
         'parse_mode' => 'HTML'
     ];
+
     if ($replyMarkup) {
-        $post['reply_markup'] = json_encode($replyMarkup);
+        $data['reply_markup'] = json_encode($replyMarkup, JSON_UNESCAPED_UNICODE);
     }
-    file_get_contents($url."?".http_build_query($post));
+
+    $ch = curl_init($apiURL . "sendMessage");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_exec($ch);
+    curl_close($ch);
 }
 
-/* === Menú principal === */
+// === Menú principal ===
 function menuPrincipal($chatId) {
     $keyboard = [
         'keyboard' => [
             [["text" => "🍎 Ver ingredientes"], ["text" => "📂 Ver catálogo"]],
             [["text" => "📍 Puntos de entrega"]],
+            [["text" => "Hacer pedido"], ["text" => "Hablar con un asesor"]]
         ],
         'resize_keyboard' => true,
         'one_time_keyboard' => false
     ];
-    $text = "¡Hola! Somos <b>Food-Lite</b> y vendemos snacks saludables de varios tipos. 
+    $text = "¡Hola! Somos <b>Food-Lite</b> y vendemos snacks saludables de varios tipos.  
 ¿En qué podemos ayudarte hoy?";
     sendMessage($chatId, $text, $keyboard);
 }
 
-/* === Router de mensajes === */
-switch(strtolower($message)) {
+// === Router de mensajes ===
+$update = json_decode(file_get_contents("php://input"), true);
+$chatId = $update['message']['chat']['id'] ?? null;
+$message = strtolower(trim($update['message']['text'] ?? ""));
+
+switch ($message) {
+    // Start
     case "/start":
         menuPrincipal($chatId);
         break;
 
-    /* Opción 1: Ingredientes */
+    // Ingredientes
     case "🍎 ver ingredientes":
         $keyboard = [
             'keyboard' => [
                 [["text" => "Barritas"], ["text" => "Batidos"]],
                 [["text" => "Bolitas"], ["text" => "Ensaladas"]],
-                [["text" => "⬅️ Volver al menú"]],
+                [["text" => "⬅️ Volver al menú"]]
             ],
             'resize_keyboard' => true
         ];
@@ -70,13 +77,13 @@ switch(strtolower($message)) {
         sendMessage($chatId, "Ingredientes de Ensaladas: vegetales frescos, aderezo natural.");
         break;
 
-    /* Opción 2: Catálogo */
+    // Catálogo
     case "📂 ver catálogo":
         $keyboard = [
             'keyboard' => [
                 [["text" => "Energéticos"], ["text" => "Digestivos"]],
                 [["text" => "Desintoxicantes"], ["text" => "Veganos"]],
-                [["text" => "Proteicos"], ["text" => "⬅️ Volver al menú"]],
+                [["text" => "Proteicos"], ["text" => "⬅️ Volver al menú"]]
             ],
             'resize_keyboard' => true
         ];
@@ -86,30 +93,45 @@ switch(strtolower($message)) {
     case "energéticos":
         sendMessage($chatId, "Categoría Energéticos:\n- Batido de banano\n- Barritas de chocolate con proteína\n- Bolitas energéticas");
         break;
+    case "digestivos":
+        sendMessage($chatId, "Categoría Digestivos:\n- Té verde\n- Bolitas de avena y pasas\n- Batido de piña y jengibre");
+        break;
+    case "desintoxicantes":
+        sendMessage($chatId, "Categoría Desintoxicantes:\n- Jugo verde\n- Smoothie detox\n- Ensalada fresca");
+        break;
+    case "veganos":
+        sendMessage($chatId, "Categoría Veganos:\n- Barritas veganas\n- Batido de soya\n- Bolitas de proteína vegetal");
+        break;
+    case "proteicos":
+        sendMessage($chatId, "Categoría Proteicos:\n- Batido de proteína\n- Barritas con whey protein\n- Bolitas energéticas de maní");
+        break;
 
-    /* Opción 3: Puntos de entrega */
+    // Puntos de entrega
     case "📍 puntos de entrega":
         sendMessage($chatId, "Actualmente entregamos en los siguientes puntos:\n- Entrada de Odontología (UES)\n- Metrocentro San Salvador y Lourdes\n- BINAES en eventos/ferias estudiantiles.");
         break;
 
-    /* Nodo de retorno */
-    case "⬅️ volver al menú":
-        menuPrincipal($chatId);
-        break;
-
-    /* Pedido */
+    // Pedido
     case "hacer pedido":
-        sendMessage($chatId, "¡Genial! Para hacer tu pedido, por favor escribe:\n\n<b>Producto - Cantidad - Punto de entrega</b>");
+        sendMessage($chatId, "¡Genial! Para hacer tu pedido, escribe:\n\n<b>Producto - Cantidad - Punto de entrega</b>");
         break;
 
-    /* Hablar con asesor */
+    // Asesor
     case "hablar con un asesor":
         sendMessage($chatId, "Claro, un asesor te atenderá pronto. También puedes dejar tu número para que te contacten por WhatsApp.");
         break;
 
-    default:
-        sendMessage($chatId, "No entendí tu mensaje 🤔. Usa el menú principal:", null);
+    // Volver
+    case "⬅️ volver al menú":
         menuPrincipal($chatId);
+        break;
+
+    // Por defecto
+    default:
+        if ($message !== "") {
+            sendMessage($chatId, "No entendí tu mensaje 🤔. Usa el menú principal:");
+            menuPrincipal($chatId);
+        }
         break;
 }
 ?>
