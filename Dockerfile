@@ -11,4 +11,4 @@ COPY . /app
 EXPOSE 10000
 
 # Ejecutamos el servidor PHP embebido
-CMD ["sh", "-c", "php -S 0.0.0.0:${PORT:-10000} foodlite.php"]
+CMD ["sh", "-c", "php -S 0.0.0.0:${PORT:-10000} foodlitebot.php"]
