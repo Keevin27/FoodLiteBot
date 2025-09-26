@@ -34,11 +34,11 @@ function menuPrincipal($chatId) {
             [['text' => '📂 Ver catálogo', 'callback_data' => 'catalogo']],
             [['text' => '📍 Puntos de entrega', 'callback_data' => 'puntos']],
             [['text' => '🛒 Hacer pedido', 'callback_data' => 'pedido']],
-            [['text' => '👨‍💼 Hablar con asesor', 'callback_data' => 'asesor']]
+            [['text' => '👨‍💼 Nuestras redes sociales', 'callback_data' => 'asesor']]
         ]
     ];
     
-    $text = "¡Hola! Somos Food-Lite y vendemos snacks saludables de varios tipos.\n¿En qué podemos ayudarte hoy?";
+    $text = "¡Hola! Bienvenido/a a Food-Lite.\n¿En qué podemos ayudarte hoy?";
     sendMessage($chatId, $text, $keyboard);
 }
 
@@ -140,11 +140,9 @@ if ($callbackData) {
                 ]
             ];
             
-            $text = "👨‍💼 CONTACTO CON ASESOR\n\n";
-            $text .= "🕐 Un asesor te atenderá pronto durante nuestro horario.\n\n";
-            $text .= "📱 TAMBIÉN PUEDES CONTACTARNOS:\n";
-            $text .= "• WhatsApp: +503 1234-5678\n";
-            $text .= "• Email: pedidos@food-lite.com\n\n";
+            $text = "👨‍💼 NUESTRAS REDES SOCIALES\n\n";
+            $text .= "• Instagram: foodlite_sv\n";
+            $text .= "• Facebook: Foods Lite\n\n";
             $text .= "⏰ HORARIO DE ATENCIÓN:\n";
             $text .= "• Lunes a Viernes: 8:00 AM - 6:00 PM\n";
             $text .= "• Sábados: 9:00 AM - 2:00 PM";
@@ -326,7 +324,6 @@ if ($message && $message != "/start") {
         $text = "✅ PEDIDO RECIBIDO\n\n";
         $text .= "📋 Tu pedido: " . $message . "\n\n";
         $text .= "🕐 Te confirmaremos el precio y tiempo de entrega en breve.\n";
-        $text .= "📱 También puedes llamarnos al +503 1234-5678\n\n";
         $text .= "¡Gracias por elegir Food-Lite! 🍎";
         
         sendMessage($chatId, $text);
