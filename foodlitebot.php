@@ -8,17 +8,37 @@ $update = json_decode($input, TRUE);
 $chatId = $update['message']['chat']['id'] ?? null;
 $message = $update['message']['text'] ?? "";
 
-if (!$chatId) exit;
+if (!$chatId) {
+    exit;
+}
 
-// Función para enviar mensajes
-function sendMessage($chatId, $text, $keyboard = null) {
-    global $website;
-    $url = $website."/sendMessage";
+// Usar exactamente el mismo método que funcionó
+if (strtolower(trim($message)) == "/start") {
     
-    $data = "chat_id=".$chatId."&text=".urlencode($text);
-    if ($keyboard) {
-        $data .= "&reply_markup=".urlencode(json_encode($keyboard));
-    }
+    // Primer mensaje: texto plano
+    $text = "¡Hola! Somos Food-Lite y vendemos snacks saludables.\n\n";
+    $text .= "Escribe una de estas opciones:\n";
+    $text .= "• ingredientes\n";
+    $text .= "• catalogo\n"; 
+    $text .= "• puntos\n";
+    $text .= "• pedido\n";
+    $text .= "• asesor";
+    
+    $url = $website."/sendMessage?chat_id=".$chatId."&text=".urlencode($text);
+    file_get_contents($url);
+    
+    // Segundo mensaje: con teclado
+    $keyboard = json_encode([
+        'keyboard' => [
+            [['text' => '🍎 Ingredientes'], ['text' => '📂 Catálogo']],
+            [['text' => '📍 Puntos de entrega']],
+            [['text' => '🛒 Hacer pedido'], ['text' => '👨‍💼 Asesor']]
+        ],
+        'resize_keyboard' => true
+    ]);
+    
+    $url2 = $website."/sendMessage";
+    $data = "chat_id=".$chatId."&text=".urlencode("O usa estos botones:")."&reply_markup=".urlencode($keyboard);
     
     $context = stream_context_create([
         'http' => [
@@ -28,165 +48,94 @@ function sendMessage($chatId, $text, $keyboard = null) {
         ]
     ]);
     
-    return file_get_contents($url, false, $context);
-}
-
-// Menú principal
-function menuPrincipal($chatId) {
-    $keyboard = [
-        'keyboard' => [
-            [['text' => '🍎 Ver ingredientes'], ['text' => '📂 Ver catálogo']],
-            [['text' => '📍 Puntos de entrega']],
-            [['text' => '🛒 Hacer pedido'], ['text' => '👨‍💼 Hablar con asesor']]
-        ],
-        'resize_keyboard' => true,
-        'one_time_keyboard' => false
-    ];
+    file_get_contents($url2, false, $context);
     
-    $text = "¡Hola! Somos Food-Lite y vendemos snacks saludables de varios tipos.\n¿En qué podemos ayudarte hoy?";
-    sendMessage($chatId, $text, $keyboard);
-}
-
-// Router de mensajes
-$msg = strtolower(trim($message));
-
-switch($msg) {
-    case "/start":
-        menuPrincipal($chatId);
-        break;
-
-    // INGREDIENTES
-    case "🍎 ver ingredientes":
-        $keyboard = [
-            'keyboard' => [
-                [['text' => 'Barritas'], ['text' => 'Batidos']],
-                [['text' => 'Bolitas'], ['text' => 'Ensaladas']],
-                [['text' => '⬅️ Volver al menú']]
-            ],
-            'resize_keyboard' => true
-        ];
-        sendMessage($chatId, "¿De qué producto deseas conocer los ingredientes?", $keyboard);
-        break;
-
-    case "barritas":
-        sendMessage($chatId, "🥜 Ingredientes de Barritas:\n• Avena integral\n• Miel natural\n• Almendras\n• Proteína vegetal");
-        break;
-
-    case "batidos":
-        sendMessage($chatId, "🥤 Ingredientes de Batidos:\n• Frutas naturales\n• Yogur natural\n• Avena\n• Endulzante natural");
-        break;
-
-    case "bolitas":
-        sendMessage($chatId, "🍫 Ingredientes de Bolitas:\n• Dátiles naturales\n• Cacao puro\n• Coco rallado\n• Frutos secos");
-        break;
-
-    case "ensaladas":
-        sendMessage($chatId, "🥗 Ingredientes de Ensaladas:\n• Vegetales frescos orgánicos\n• Aderezo natural casero\n• Semillas y frutos secos");
-        break;
-
-    // CATÁLOGO
-    case "📂 ver catálogo":
-        $keyboard = [
-            'keyboard' => [
-                [['text' => 'Energéticos'], ['text' => 'Digestivos']],
-                [['text' => 'Desintoxicantes'], ['text' => 'Veganos']],
-                [['text' => 'Proteicos'], ['text' => '⬅️ Volver al menú']]
-            ],
-            'resize_keyboard' => true
-        ];
-        sendMessage($chatId, "Nuestras categorías disponibles.\nElige la que más te interese:", $keyboard);
-        break;
-
-    case "energéticos":
-        $text = "⚡ ENERGÉTICOS:\n\n";
-        $text .= "🍌 Batido de banano - $3.50\n";
-        $text .= "🍫 Barritas de chocolate con proteína - $2.75\n";
-        $text .= "⚽ Bolitas energéticas - $2.25\n\n";
-        $text .= "¿Te interesa alguno? Escribe 'hacer pedido'";
-        sendMessage($chatId, $text);
-        break;
-
-    case "digestivos":
-        $text = "🌱 DIGESTIVOS:\n\n";
-        $text .= "🥤 Batido de papaya y avena - $3.25\n";
-        $text .= "🍪 Galletas integrales - $2.50\n";
-        $text .= "🥗 Ensalada verde especial - $4.00";
-        sendMessage($chatId, $text);
-        break;
-
-    case "desintoxicantes":
-        $text = "🍃 DESINTOXICANTES:\n\n";
-        $text .= "🥬 Batido verde detox - $3.75\n";
-        $text .= "🧄 Shots de jengibre - $1.50\n";
-        $text .= "🥒 Agua saborizada natural - $2.00";
-        sendMessage($chatId, $text);
-        break;
-
-    case "veganos":
-        $text = "🌿 VEGANOS:\n\n";
-        $text .= "🥥 Bolitas de coco y cacao - $2.75\n";
-        $text .= "🌰 Barritas de almendra - $3.00\n";
-        $text .= "🥤 Leche de almendras - $2.50";
-        sendMessage($chatId, $text);
-        break;
-
-    case "proteicos":
-        $text = "💪 PROTEICOS:\n\n";
-        $text .= "🥤 Batido de proteína natural - $4.00\n";
-        $text .= "🥜 Mix de frutos secos - $3.25\n";
-        $text .= "🍳 Wrap proteico - $4.50";
-        sendMessage($chatId, $text);
-        break;
-
-    // PUNTOS DE ENTREGA
-    case "📍 puntos de entrega":
-        $text = "📍 PUNTOS DE ENTREGA:\n\n";
-        $text .= "🏫 UNIVERSIDAD:\n";
-        $text .= "• Entrada de Odontología (UES)\n\n";
-        $text .= "🛍️ CENTROS COMERCIALES:\n";
-        $text .= "• Metrocentro San Salvador\n";
-        $text .= "• Metrocentro Lourdes\n\n";
-        $text .= "🎪 EVENTOS ESPECIALES:\n";
-        $text .= "• BINAES en ferias estudiantiles\n\n";
-        $text .= "⏰ Horarios: Lunes a Viernes 8:00 AM - 4:00 PM";
-        sendMessage($chatId, $text);
-        break;
-
-    // HACER PEDIDO
-    case "🛒 hacer pedido":
-    case "hacer pedido":
-        $text = "🛒 ¡PERFECTO! Hagamos tu pedido\n\n";
-        $text .= "📝 Envía un mensaje con este formato:\n\n";
-        $text .= "Producto - Cantidad - Punto de entrega\n\n";
-        $text .= "📋 Ejemplo:\n";
-        $text .= "Batido de banano - 2 - Metrocentro San Salvador\n\n";
-        $text .= "💰 Te confirmaremos precio y tiempo de entrega.";
-        sendMessage($chatId, $text);
-        break;
-
-    // HABLAR CON ASESOR
-    case "👨‍💼 hablar con asesor":
-    case "hablar con asesor":
-        $text = "👨‍💼 CONTACTO CON ASESOR\n\n";
-        $text .= "🕐 Un asesor te atenderá pronto.\n\n";
-        $text .= "📱 También puedes contactarnos:\n";
-        $text .= "• WhatsApp: +503 1234-5678\n";
-        $text .= "• Email: pedidos@food-lite.com\n\n";
-        $text .= "⏰ Horario de atención:\n";
-        $text .= "Lunes a Viernes: 8:00 AM - 6:00 PM\n";
-        $text .= "Sábados: 9:00 AM - 2:00 PM";
-        sendMessage($chatId, $text);
-        break;
-
-    // VOLVER AL MENÚ
-    case "⬅️ volver al menú":
-        menuPrincipal($chatId);
-        break;
-
-    // MENSAJE NO RECONOCIDO
-    default:
-        sendMessage($chatId, "🤔 No entendí tu mensaje. Usa las opciones del menú:");
-        menuPrincipal($chatId);
-        break;
+} else {
+    
+    // Procesar otras opciones
+    $msg = strtolower(trim($message));
+    
+    switch($msg) {
+        case "🍎 ingredientes":
+        case "ingredientes":
+            $text = "🍎 INGREDIENTES DISPONIBLES:\n\n";
+            $text .= "🥜 Barritas: avena, miel, almendras, proteína\n";
+            $text .= "🥤 Batidos: frutas naturales, yogur, avena\n";
+            $text .= "🍫 Bolitas: dátiles, cacao, coco rallado\n";
+            $text .= "🥗 Ensaladas: vegetales frescos, aderezo natural\n\n";
+            $text .= "Escribe 'barritas', 'batidos', 'bolitas' o 'ensaladas' para más detalles";
+            break;
+            
+        case "📂 catálogo":
+        case "catalogo":
+            $text = "📂 NUESTRO CATÁLOGO:\n\n";
+            $text .= "⚡ Energéticos - Batidos y barritas\n";
+            $text .= "🌱 Digestivos - Especialidades para digestión\n";
+            $text .= "🍃 Desintoxicantes - Batidos verdes y shots\n";
+            $text .= "🌿 Veganos - 100% origen vegetal\n";
+            $text .= "💪 Proteicos - Alto contenido proteico\n\n";
+            $text .= "Escribe la categoría que te interese";
+            break;
+            
+        case "📍 puntos de entrega":
+        case "puntos":
+            $text = "📍 PUNTOS DE ENTREGA:\n\n";
+            $text .= "🏫 Universidad:\n";
+            $text .= "• Entrada de Odontología (UES)\n\n";
+            $text .= "🛍️ Centros Comerciales:\n";
+            $text .= "• Metrocentro San Salvador\n";
+            $text .= "• Metrocentro Lourdes\n\n";
+            $text .= "🎪 Eventos Especiales:\n";
+            $text .= "• BINAES en ferias estudiantiles\n\n";
+            $text .= "⏰ Horarios: Lunes a Viernes 8:00 AM - 4:00 PM";
+            break;
+            
+        case "🛒 hacer pedido":
+        case "pedido":
+            $text = "🛒 ¡PERFECTO! Para hacer tu pedido:\n\n";
+            $text .= "📝 Escribe en este formato:\n";
+            $text .= "Producto - Cantidad - Punto de entrega\n\n";
+            $text .= "📋 Ejemplo:\n";
+            $text .= "'Batido de banano - 2 - Metrocentro'\n\n";
+            $text .= "💰 Te confirmaremos precio y tiempo";
+            break;
+            
+        case "👨‍💼 asesor":
+        case "asesor":
+            $text = "👨‍💼 CONTACTO DIRECTO:\n\n";
+            $text .= "📱 WhatsApp: +503 1234-5678\n";
+            $text .= "📧 Email: pedidos@food-lite.com\n\n";
+            $text .= "⏰ Horarios de atención:\n";
+            $text .= "• Lunes a Viernes: 8:00 AM - 6:00 PM\n";
+            $text .= "• Sábados: 9:00 AM - 2:00 PM\n\n";
+            $text .= "¡Un asesor te contactará pronto!";
+            break;
+            
+        // Detalles de ingredientes
+        case "barritas":
+            $text = "🥜 BARRITAS - Ingredientes detallados:\n\n";
+            $text .= "• Avena integral certificada\n";
+            $text .= "• Miel de abeja pura\n";
+            $text .= "• Almendras naturales\n";
+            $text .= "• Proteína vegetal (guisante)\n";
+            $text .= "• Sin conservantes artificiales";
+            break;
+            
+        case "batidos":
+            $text = "🥤 BATIDOS - Ingredientes detallados:\n\n";
+            $text .= "• Frutas frescas de temporada\n";
+            $text .= "• Yogur natural probiótico\n";
+            $text .= "• Avena molida\n";
+            $text .= "• Endulzante natural (stevia)\n";
+            $text .= "• Agua purificada";
+            break;
+            
+        default:
+            $text = "🤔 No entendí tu mensaje.\n\nEscribe /start para ver el menú principal";
+            break;
+    }
+    
+    $url = $website."/sendMessage?chat_id=".$chatId."&text=".urlencode($text);
+    file_get_contents($url);
 }
 ?>
