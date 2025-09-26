@@ -12,10 +12,9 @@ if (!$chatId) {
     exit;
 }
 
-// Usar exactamente el mismo método que funcionó
 if (strtolower(trim($message)) == "/start") {
     
-    // Primer mensaje: texto plano
+    // Primer mensaje: texto plano (este SÍ funciona)
     $text = "¡Hola! Somos Food-Lite y vendemos snacks saludables.\n\n";
     $text .= "Escribe una de estas opciones:\n";
     $text .= "• ingredientes\n";
@@ -27,36 +26,30 @@ if (strtolower(trim($message)) == "/start") {
     $url = $website."/sendMessage?chat_id=".$chatId."&text=".urlencode($text);
     file_get_contents($url);
     
-    // Segundo mensaje: con teclado
-    $keyboard = json_encode([
+    // MÉTODO MÁS SIMPLE para teclado - usando GET
+    $keyboardText = "Menú de opciones:";
+    $keyboard = [
         'keyboard' => [
-            [['text' => '🍎 Ingredientes'], ['text' => '📂 Catálogo']],
-            [['text' => '📍 Puntos de entrega']],
-            [['text' => '🛒 Hacer pedido'], ['text' => '👨‍💼 Asesor']]
+            [['text' => 'Ingredientes']],
+            [['text' => 'Catalogo']],
+            [['text' => 'Puntos']],
+            [['text' => 'Pedido']],
+            [['text' => 'Asesor']]
         ],
         'resize_keyboard' => true
-    ]);
+    ];
     
-    $url2 = $website."/sendMessage";
-    $data = "chat_id=".$chatId."&text=".urlencode("O usa estos botones:")."&reply_markup=".urlencode($keyboard);
+    $keyboardJson = json_encode($keyboard);
+    $urlKeyboard = $website."/sendMessage?chat_id=".$chatId."&text=".urlencode($keyboardText)."&reply_markup=".urlencode($keyboardJson);
     
-    $context = stream_context_create([
-        'http' => [
-            'method' => 'POST',
-            'header' => "Content-Type: application/x-www-form-urlencoded\r\n",
-            'content' => $data
-        ]
-    ]);
-    
-    file_get_contents($url2, false, $context);
+    file_get_contents($urlKeyboard);
     
 } else {
     
-    // Procesar otras opciones
+    // Procesar respuestas (sin cambios, porque funciona)
     $msg = strtolower(trim($message));
     
     switch($msg) {
-        case "🍎 ingredientes":
         case "ingredientes":
             $text = "🍎 INGREDIENTES DISPONIBLES:\n\n";
             $text .= "🥜 Barritas: avena, miel, almendras, proteína\n";
@@ -66,18 +59,16 @@ if (strtolower(trim($message)) == "/start") {
             $text .= "Escribe 'barritas', 'batidos', 'bolitas' o 'ensaladas' para más detalles";
             break;
             
-        case "📂 catálogo":
         case "catalogo":
             $text = "📂 NUESTRO CATÁLOGO:\n\n";
-            $text .= "⚡ Energéticos - Batidos y barritas\n";
+            $text .= "⚡ Energéticos - Batidos y barritas energéticas\n";
             $text .= "🌱 Digestivos - Especialidades para digestión\n";
             $text .= "🍃 Desintoxicantes - Batidos verdes y shots\n";
             $text .= "🌿 Veganos - 100% origen vegetal\n";
             $text .= "💪 Proteicos - Alto contenido proteico\n\n";
-            $text .= "Escribe la categoría que te interese";
+            $text .= "Escribe 'energeticos', 'digestivos', 'desintoxicantes', 'veganos' o 'proteicos'";
             break;
             
-        case "📍 puntos de entrega":
         case "puntos":
             $text = "📍 PUNTOS DE ENTREGA:\n\n";
             $text .= "🏫 Universidad:\n";
@@ -90,7 +81,6 @@ if (strtolower(trim($message)) == "/start") {
             $text .= "⏰ Horarios: Lunes a Viernes 8:00 AM - 4:00 PM";
             break;
             
-        case "🛒 hacer pedido":
         case "pedido":
             $text = "🛒 ¡PERFECTO! Para hacer tu pedido:\n\n";
             $text .= "📝 Escribe en este formato:\n";
@@ -100,7 +90,6 @@ if (strtolower(trim($message)) == "/start") {
             $text .= "💰 Te confirmaremos precio y tiempo";
             break;
             
-        case "👨‍💼 asesor":
         case "asesor":
             $text = "👨‍💼 CONTACTO DIRECTO:\n\n";
             $text .= "📱 WhatsApp: +503 1234-5678\n";
@@ -111,18 +100,34 @@ if (strtolower(trim($message)) == "/start") {
             $text .= "¡Un asesor te contactará pronto!";
             break;
             
-        // Detalles de ingredientes
+        // Categorías del catálogo
+        case "energeticos":
+            $text = "⚡ ENERGÉTICOS:\n\n";
+            $text .= "🍌 Batido de banano - $3.50\n";
+            $text .= "🍫 Barritas de chocolate proteico - $2.75\n";
+            $text .= "⚽ Bolitas energéticas - $2.25\n\n";
+            $text .= "Para pedidos escribe: 'pedido'";
+            break;
+            
+        case "digestivos":
+            $text = "🌱 DIGESTIVOS:\n\n";
+            $text .= "🥤 Batido papaya-avena - $3.25\n";
+            $text .= "🍪 Galletas integrales - $2.50\n";
+            $text .= "🥗 Ensalada verde - $4.00";
+            break;
+            
+        // Ingredientes detallados
         case "barritas":
-            $text = "🥜 BARRITAS - Ingredientes detallados:\n\n";
+            $text = "🥜 BARRITAS - Ingredientes:\n\n";
             $text .= "• Avena integral certificada\n";
             $text .= "• Miel de abeja pura\n";
             $text .= "• Almendras naturales\n";
-            $text .= "• Proteína vegetal (guisante)\n";
+            $text .= "• Proteína vegetal\n";
             $text .= "• Sin conservantes artificiales";
             break;
             
         case "batidos":
-            $text = "🥤 BATIDOS - Ingredientes detallados:\n\n";
+            $text = "🥤 BATIDOS - Ingredientes:\n\n";
             $text .= "• Frutas frescas de temporada\n";
             $text .= "• Yogur natural probiótico\n";
             $text .= "• Avena molida\n";
@@ -131,7 +136,7 @@ if (strtolower(trim($message)) == "/start") {
             break;
             
         default:
-            $text = "🤔 No entendí tu mensaje.\n\nEscribe /start para ver el menú principal";
+            $text = "🤔 No entendí: '$message'\n\nEscribe /start para ver opciones";
             break;
     }
     
